@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Plus, 
   BarChart3, 
@@ -21,54 +22,68 @@ import hackathonImage from "@/assets/hackathon-event.jpg";
 import workshopImage from "@/assets/workshop-event.jpg";
 import festivalImage from "@/assets/festival-event.jpg";
 
+const sampleEvents: Event[] = [
+  {
+    id: '1',
+    title: 'Spring Hackathon 2024',
+    description: 'Build innovative solutions in 48 hours. Win prizes worth $10,000!',
+    date: '2024-03-15',
+    time: '09:00 AM',
+    location: 'Computer Science Building',
+    category: 'hackathon',
+    attendees: 156,
+    maxAttendees: 200,
+    status: 'upcoming',
+    image: hackathonImage,
+    organizer: 'Tech Club'
+  },
+  {
+    id: '2',
+    title: 'React Workshop Series',
+    description: 'Learn modern React development with hooks, context, and best practices.',
+    date: '2024-03-20',
+    time: '02:00 PM',
+    location: 'Lab 301',
+    category: 'workshop',
+    attendees: 45,
+    maxAttendees: 50,
+    status: 'upcoming',
+    image: workshopImage,
+    organizer: 'CS Department'
+  },
+  {
+    id: '3',
+    title: 'Spring Festival 2024',
+    description: 'Annual campus celebration with music, food, and entertainment.',
+    date: '2024-02-28',
+    time: '06:00 PM',
+    location: 'Main Quadrangle',
+    category: 'festival',
+    attendees: 890,
+    maxAttendees: 1000,
+    status: 'completed',
+    image: festivalImage,
+    organizer: 'Student Council'
+  }
+];
+
 const AdminPortal = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'events' | 'create'>('overview');
   const [searchTerm, setSearchTerm] = useState('');
+  const [events, setEvents] = useState<Event[]>(sampleEvents);
+  const { toast } = useToast();
 
-  const sampleEvents: Event[] = [
-    {
-      id: '1',
-      title: 'Spring Hackathon 2024',
-      description: 'Build innovative solutions in 48 hours. Win prizes worth $10,000!',
-      date: '2024-03-15',
-      time: '09:00 AM',
-      location: 'Computer Science Building',
-      category: 'hackathon',
-      attendees: 156,
-      maxAttendees: 200,
-      status: 'upcoming',
-      image: hackathonImage,
-      organizer: 'Tech Club'
-    },
-    {
-      id: '2',
-      title: 'React Workshop Series',
-      description: 'Learn modern React development with hooks, context, and best practices.',
-      date: '2024-03-20',
-      time: '02:00 PM',
-      location: 'Lab 301',
-      category: 'workshop',
-      attendees: 45,
-      maxAttendees: 50,
-      status: 'upcoming',
-      image: workshopImage,
-      organizer: 'CS Department'
-    },
-    {
-      id: '3',
-      title: 'Spring Festival 2024',
-      description: 'Annual campus celebration with music, food, and entertainment.',
-      date: '2024-02-28',
-      time: '06:00 PM',
-      location: 'Main Quadrangle',
-      category: 'festival',
-      attendees: 890,
-      maxAttendees: 1000,
-      status: 'completed',
-      image: festivalImage,
-      organizer: 'Student Council'
-    }
-  ];
+  // Form state for creating new events
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    date: '',
+    time: '',
+    location: '',
+    category: '',
+    maxAttendees: '',
+    organizer: 'Admin'
+  });
 
   const stats = [
     { icon: Calendar, label: "Total Events", value: "24", change: "+12%" },
@@ -77,14 +92,79 @@ const AdminPortal = () => {
     { icon: BarChart3, label: "Avg. Satisfaction", value: "4.8", change: "+0.3" }
   ];
 
-  const filteredEvents = sampleEvents.filter(event =>
+  const filteredEvents = events.filter(event =>
     event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     event.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleInputChange = (field: keyof typeof formData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      description: '',
+      date: '',
+      time: '',
+      location: '',
+      category: '',
+      maxAttendees: '',
+      organizer: 'Admin'
+    });
+  };
+
   const handleCreateEvent = () => {
-    // In a real app, this would open a form modal or navigate to create page
-    alert('Create event functionality would be implemented here');
+    // Validate form
+    if (!formData.title || !formData.description || !formData.date || !formData.time || !formData.location || !formData.category || !formData.maxAttendees) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate category
+    const validCategories = ['hackathon', 'workshop', 'festival', 'tech-talk'];
+    const category = formData.category.toLowerCase();
+    if (!validCategories.includes(category)) {
+      toast({
+        title: "Error",
+        description: "Category must be one of: hackathon, workshop, festival, tech-talk",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Create new event
+    const newEvent: Event = {
+      id: Date.now().toString(),
+      title: formData.title,
+      description: formData.description,
+      date: formData.date,
+      time: formData.time,
+      location: formData.location,
+      category: category as 'hackathon' | 'workshop' | 'festival' | 'tech-talk',
+      attendees: 0,
+      maxAttendees: parseInt(formData.maxAttendees),
+      status: 'upcoming',
+      image: hackathonImage, // Default image
+      organizer: formData.organizer
+    };
+
+    // Add to events list
+    setEvents(prev => [newEvent, ...prev]);
+    
+    // Reset form and show success message
+    resetForm();
+    toast({
+      title: "Success!",
+      description: "Event created successfully",
+    });
+
+    // Switch to events tab to see the new event
+    setActiveTab('events');
   };
 
   const handleEditEvent = (eventId: string) => {
@@ -169,7 +249,7 @@ const AdminPortal = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {sampleEvents.slice(0, 3).map((event) => (
+                  {events.slice(0, 3).map((event) => (
                     <div key={event.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
                       <div className="flex items-center space-x-4">
                         <img
@@ -247,44 +327,74 @@ const AdminPortal = () => {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Event Title</label>
-                <Input placeholder="Enter event title..." />
+                <Input 
+                  placeholder="Enter event title..." 
+                  value={formData.title}
+                  onChange={(e) => handleInputChange('title', e.target.value)}
+                />
               </div>
               
               <div className="space-y-2">
                 <label className="text-sm font-medium">Description</label>
-                <Textarea placeholder="Describe your event..." rows={4} />
+                <Textarea 
+                  placeholder="Describe your event..." 
+                  rows={4} 
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                />
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Date</label>
-                  <Input type="date" />
+                  <Input 
+                    type="date" 
+                    value={formData.date}
+                    onChange={(e) => handleInputChange('date', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Time</label>
-                  <Input type="time" />
+                  <Input 
+                    type="time" 
+                    value={formData.time}
+                    onChange={(e) => handleInputChange('time', e.target.value)}
+                  />
                 </div>
               </div>
               
               <div className="space-y-2">
                 <label className="text-sm font-medium">Location</label>
-                <Input placeholder="Event location..." />
+                <Input 
+                  placeholder="Event location..." 
+                  value={formData.location}
+                  onChange={(e) => handleInputChange('location', e.target.value)}
+                />
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Category</label>
-                  <Input placeholder="hackathon, workshop, etc." />
+                  <Input 
+                    placeholder="hackathon, workshop, festival, tech-talk" 
+                    value={formData.category}
+                    onChange={(e) => handleInputChange('category', e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Max Attendees</label>
-                  <Input type="number" placeholder="100" />
+                  <Input 
+                    type="number" 
+                    placeholder="100" 
+                    value={formData.maxAttendees}
+                    onChange={(e) => handleInputChange('maxAttendees', e.target.value)}
+                  />
                 </div>
               </div>
               
               <div className="flex gap-4 pt-4">
-                <Button className="flex-1">Create Event</Button>
-                <Button variant="outline">Save as Draft</Button>
+                <Button className="flex-1" onClick={handleCreateEvent}>Create Event</Button>
+                <Button variant="outline" onClick={resetForm}>Clear Form</Button>
               </div>
             </CardContent>
           </Card>
