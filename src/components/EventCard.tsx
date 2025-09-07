@@ -60,7 +60,7 @@ const EventCard = ({
   const attendancePercentage = (event.attendees / event.maxAttendees) * 100;
 
   return (
-    <div className="event-card bg-card border border-border rounded-xl overflow-hidden shadow-soft">
+    <div className="event-card group bg-card border border-border rounded-xl overflow-hidden shadow-soft">
       {/* Event Image */}
       <div className="relative h-48 overflow-hidden">
         <img
